@@ -376,13 +376,50 @@ def get_inscribed_rect(points):
 		cv2.line(canvas, line_h[0], line_h[1], (100, 0, 100), 1)
 	#endfor
 	
-	## 求图的最大回路
+	## 扫描连通图
 	print('matrix_bool')
 	for m in matrix_bool:
-	
 		print(m)
+	
+	#endfor
+	
+	L = [] #横向扫描
+	P = [] #纵向扫描
+	
+	'''
+	
+	h_size = len(matrix_bool)
+	v_size = len(matrix_bool[0])
+	
+	print('matrix_bool')
+	for i in range(h_size-1):
+		
+		for j in range(v_size-1):
+			
+			v = matrix_bool[i][j]
+			v_right = matrix_bool[i][j+1]
+			v_down = matrix_bool[i+1][j]
+			
+			rect = matrix_vertex[i][j]
+			
+			pt1 = rect[0]
+			pt2 = rect[1]
+			
+			if v == 1 and v_right == 1 and v_down == 1: 
+			
+				cv2.rectangle(canvas, (pt1[0]+2, pt1[1]+2), (pt2[0]-2, pt2[1]-2), (50, 150, 1000), -1)
+			
+			else:
+				cv2.rectangle(canvas, (pt1[0]+2, pt1[1]+2), (pt2[0]-2, pt2[1]-2), (50, 50, 50), -1)
+			#endif
+			cv2.imshow('get_inscribed_rect', canvas)
+			cv2.waitKey(0)
+		#endfor
 		
 	#endfor
+	'''
+	
+	#计算最后一个顶点的连通性
 	
 	
 	## 获取回路顶点
