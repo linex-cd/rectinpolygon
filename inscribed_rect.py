@@ -149,6 +149,13 @@ def is_subarea_in_polygon(polygon, subarea):
 	return False
 	
 #enddef
+
+
+def get_rects_in_matrix(matrix):
+	rects = []
+	
+	return rects
+#endif
 			
 def get_inscribed_rect(points):
 
@@ -306,8 +313,9 @@ def get_inscribed_rect(points):
 	
 	
 	## 所有网格求交得到子矩形集合，并判断子矩形是否在多边形之内，生成判断集合矩阵
-	matrix_bool = []
-	matrix_vertex = []
+	matrix_bool = [] #是否在多边形内
+	matrix_vertex = [] #矩形的顶点
+	
 	
 	count_lines_h = len(lines_h)
 	count_lines_v = len(lines_v)
@@ -366,6 +374,7 @@ def get_inscribed_rect(points):
 				
 			else:
 				matrix_bool[i-1].append(0)
+				
 			#endif
 
 			
@@ -384,46 +393,86 @@ def get_inscribed_rect(points):
 	
 	#endfor
 	
+	
+	#求矩形数组
 	#矩形数组[左上角矩形左上角顶点xy, 右下角矩形右下角顶点, 面积]
-	# R =[ [x1,y1,x2,y2,s], [x1,y1,x2,y2,s], [x1,y1,x2,y2,s] ... ]
-	R = []
+	#矩形为左上角的最大矩形
+	# array_rect =[ [x1,y1,x2,y2,s], [x1,y1,x2,y2,s], [x1,y1,x2,y2,s] ... ]
+	array_rect = [] 
 	
-	'''
 	
-	h_size = len(matrix_bool)
-	v_size = len(matrix_bool[0])
+	v_size = len(matrix_bool)
+	h_size = len(matrix_bool[0])
 	
-	print('matrix_bool')
-	for i in range(h_size-1):
-		
-		for j in range(v_size-1):
+
+	for i in range(v_size):
+				
+		for j in range(h_size):
 			
 			#当前矩形
 			v = matrix_bool[i][j]
-			
-			#横向寻找
-			#纵向寻找
-			v_right = matrix_bool[i][j+1]
-			v_down = matrix_bool[i+1][j]
-			
+
 			rect = matrix_vertex[i][j]
 			
 			pt1 = rect[0]
 			pt2 = rect[1]
 			
-			if v == 1 and v_right == 1 and v_down == 1: 
 			
-				cv2.rectangle(canvas, (pt1[0]+2, pt1[1]+2), (pt2[0]-2, pt2[1]-2), (50, 150, 1000), -1)
-			
-			else:
+			'''
+			if v == 0 : 
 				cv2.rectangle(canvas, (pt1[0]+2, pt1[1]+2), (pt2[0]-2, pt2[1]-2), (50, 50, 50), -1)
+			else:
+				cv2.rectangle(canvas, (pt1[0]+2, pt1[1]+2), (pt2[0]-2, pt2[1]-2), (50, 150, 1000), -1)
 			#endif
+			
 			cv2.imshow('get_inscribed_rect', canvas)
 			cv2.waitKey(0)
+			'''
+			
+			#跳过空值
+			if v == 0:
+				continue
+			#endif
+			
+			#找最大宽度和高度
+			max_w = 1
+			max_h = 1
+			
+			#横向查找,最远的矩形跨度w赋值为max_w，如果这个w<max_w，则更新max_w
+			
+			w = 1
+			for m in range(j+1, h_size):
+				if matrix_bool[i][m] == 1:
+					w = w + 1
+				else:
+					break
+				#endif
+			#endfor
+			if w > max_w:
+				max_w = w
+			#endif
+			print("row i(%d) , col j(%d) max_w=%d" % (i, j, max_w))
+			
+			'''
+			#纵向每行确认相同宽度，遇到0则终止查找
+			for n in range(i, max_w):
+				if matrix_bool[n][j] == 1:
+					h = h + 1
+				else:
+					break
+				#endif
+			#endfor
+			'''
+			
+			max_rect = [0,0,0,0,0]
+			array_rect.append(max_rect)
+			
+			
+			
 		#endfor
 		
 	#endfor
-	'''
+	
 
 
 	cv2.destroyAllWindows()
@@ -432,7 +481,7 @@ def get_inscribed_rect(points):
 #enddef
 
 
-points = [(100,300), (200,200), (500, 350), (500, 600), (350, 700), (200, 600), (150, 500)]
+points = [(100,300), (200,200), (500, 350), (450, 600), (350, 700), (200, 600), (150, 500)]
 
 print(points)
 r = get_inscribed_rect(points)
