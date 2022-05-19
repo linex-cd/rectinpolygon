@@ -111,16 +111,17 @@ def pt_is_in_poly(p, poly):
 		next_i = i + 1 if i + 1 < len(poly) else 0
 		x1, y1 = corner
 		x2, y2 = poly[next_i]
-		if (x1 == px and y1 == py) or (x2 == px and y2 == py):  # if point is on vertex
+		if (x1 == px and y1 == py) or (x2 == px and y2 == py):  # 点在顶点上
 			ret = True
 			break
 		#endif
-		if min(y1, y2) < py <= max(y1, y2):  # find horizontal edges of polygon
+		if min(y1, y2) < py <= max(y1, y2):  #找到多边形的水平边
 			x = x1 + (py - y1) * (x2 - x1) / (y2 - y1)
-			if x == px:  # if point is on edge
+			x = int(x) #转为整数，防止因为精度问题导致的判断错误
+			if x == px:  # 点在边上
 				ret = True
 				break
-			elif x > px:  # if point is on left-side of line
+			elif x > px:  #点在左侧，做一次发展
 				ret = not ret
 			#endif
 		#endif
@@ -383,8 +384,9 @@ def get_inscribed_rect(points):
 	
 	#endfor
 	
-	L = [] #横向扫描
-	P = [] #纵向扫描
+	#矩形数组[左上角矩形左上角顶点xy, 右下角矩形右下角顶点, 面积]
+	# R =[ [x1,y1,x2,y2,s], [x1,y1,x2,y2,s], [x1,y1,x2,y2,s] ... ]
+	R = []
 	
 	'''
 	
@@ -396,7 +398,11 @@ def get_inscribed_rect(points):
 		
 		for j in range(v_size-1):
 			
+			#当前矩形
 			v = matrix_bool[i][j]
+			
+			#横向寻找
+			#纵向寻找
 			v_right = matrix_bool[i][j+1]
 			v_down = matrix_bool[i+1][j]
 			
@@ -418,11 +424,7 @@ def get_inscribed_rect(points):
 		
 	#endfor
 	'''
-	
-	#计算最后一个顶点的连通性
-	
-	
-	## 获取回路顶点
+
 
 	cv2.destroyAllWindows()
 	
