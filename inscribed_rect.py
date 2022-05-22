@@ -150,16 +150,205 @@ def is_subarea_in_polygon(polygon, subarea):
 	
 #enddef
 
+#检索每个点的所有矩形-测试
+def get_rect_of_point_test():
+	#            *
+	#0  1  2  3  4  5  6  7 j/i
+	matrix_bool=[
+	[0, 0, 0, 0, 0, 0, 0, 0], #0
+	[0, 0, 1, 0, 0, 0, 0, 0], #1
+	[0, 0, 1, 1, 0, 0, 0, 0], #2
+	[0, 1, 1, 1, 1, 0, 0, 0], #3
+	[0, 1, 1, 1, 1, 1, 0, 0], #4
+	[0, 0, 1, 1, 1, 1, 1, 0], #5*
+	[0, 0, 0, 1, 1, 1, 0, 0], #6
+	[0, 0, 0, 0, 0, 0, 0, 0]] #7
+				
+	#5 4 5 6			
+	#5 4 6 5			
+	#5 4 6 4			
+				
+	#确认1矩形
+	'''
+	1, 1, 1,
+	1, 1, 0,
+	'''
 
-def get_rects_in_matrix(matrix):
+	i=5
+	j=4
+	max_w=3
+	max_h=2
+	
+	r_array = get_rect_of_point(i, j, max_w, max_h, matrix_bool)
+	
+	print(r_array)
+#enddef
+
+#检索每个点的所有矩形
+def get_rect_of_point(i, j, max_w, max_h, matrix_bool):
+
+	r_array = []
+	#每个宽度都尝试一次
+	for z in range(1,max_w+1):
+		#扫描每列
+		for x in range(1,max_h+1):
+
+			#如果下移遇到0，则保存一个矩形，并减小一次宽度
+			p=i+x
+
+			#扫描下一行
+			for y in range(z):
+
+				q=j+y
+
+				w=matrix_bool[p][q]
+				
+				if w == 0:
+					
+					#x=0, w=1
+					#x=1, w=0
+					
+					r = p-1
+					s = j+z-1
+					
+					#判断上一行是否存在矩形
+					if matrix_bool[r][s] == 1:
+						r = [i,j,r,s]
+						if r not in r_array:
+							r_array.append(r)
+						#endif
+					#endif
+
+					
+				#endif
+
+			
+			#endfor
+		#endfor
+	#endfor
+	return r_array
+#enddef
+
+
+#计算面积
+def get_rect_size_of_matrix(matrix_vertex, r):
+	
+	[i, j, r, s] = r
+	
+	[pt1, pt2] = matrix_vertex[i][j]
+	x1 = pt1[0]
+	y1 = pt1[1]
+
+	[pt3, pt4] = matrix_vertex[r][s]
+	x2 = pt4[0]
+	y2 = pt4[1]
+	
+	size = (x2-x1) * (y2-y1)
+	
+	return size
+
+#enddef
+
+#寻找矩阵内标记的最大矩形区域
+def get_rects_in_matrix(matrix_vertex, matrix_bool):
 	rects = []
+	
+	v_size = len(matrix_bool)
+	h_size = len(matrix_bool[0])
+	
+
+	for i in range(v_size):
+				
+		for j in range(h_size):
+			
+			#当前矩形
+			v = matrix_bool[i][j]
+
+			rect = matrix_vertex[i][j]
+			
+			pt1 = rect[0]
+			pt2 = rect[1]
+			
+			
+			'''
+			if v == 0 : 
+				cv2.rectangle(canvas, (pt1[0]+2, pt1[1]+2), (pt2[0]-2, pt2[1]-2), (50, 50, 50), -1)
+			else:
+				cv2.rectangle(canvas, (pt1[0]+2, pt1[1]+2), (pt2[0]-2, pt2[1]-2), (50, 150, 1000), -1)
+			#endif
+			
+			cv2.imshow('get_inscribed_rect', canvas)
+			cv2.waitKey(0)
+			'''
+			
+			#跳过空值
+			if v == 0:
+				continue
+			#endif
+			
+			#找最大宽度和高度
+			max_w = 1
+			max_h = 1
+			
+			#横向查找,最远的矩形跨度w赋值为max_w，如果这个w<max_w，则更新max_w
+			
+			w = 1
+			for m in range(j+1, h_size):
+				if matrix_bool[i][m] == 1:
+					w = w + 1
+				else:
+					break
+				#endif
+			#endfor
+			if w > max_w:
+				max_w = w
+			#endif
+			print("row i(%d) , col j(%d) max_w=%d" % (i, j, max_w))
+			
+			
+			#纵向查找,最远的矩形跨度h赋值为max_h，如果这个h<max_h，则更新max_h
+			
+			h = 1
+			for n in range(i+1, v_size):
+				if matrix_bool[n][j] == 1:
+					h = h + 1
+				else:
+					break
+				#endif
+			#endfor
+			if h > max_h:
+				max_h = h
+			#endif
+			print("row i(%d) , col j(%d) max_h=%d" % (i, j, max_h))
+			
+			'''
+			[0, 0, 0, 0, 0, 0, 0, 0]
+			[0, 0, 1, 0, 0, 0, 0, 0]
+			[0, 0, 1, 1, 0, 0, 0, 0]
+			[0, 1, 1, 1, 1, 0, 0, 0]
+			[0, 1, 1, 1, 1, 1, 0, 0]
+			[0, 0, 1, 1, 1, 1, 1, 0]
+			[0, 0, 0, 1, 1, 1, 0, 0]
+			[0, 0, 0, 0, 0, 0, 0, 0]
+			'''
+		
+			r_array = get_rect_of_point(i, j, max_w, max_h, matrix_bool)
+			
+			
+			rects.append(r_array)
+			
+			
+			
+		#endfor
+		
+	#endfor
 	
 	return rects
 #endif
 			
 def get_inscribed_rect(points):
 
-	rect = None
+	inscribed_rect = None
 	
 	## 获取边界
 	bound = get_bound(points)
@@ -397,87 +586,36 @@ def get_inscribed_rect(points):
 	#求矩形数组
 	#矩形数组[左上角矩形左上角顶点xy, 右下角矩形右下角顶点, 面积]
 	#矩形为左上角的最大矩形
-	# array_rect =[ [x1,y1,x2,y2,s], [x1,y1,x2,y2,s], [x1,y1,x2,y2,s] ... ]
-	array_rect = [] 
+	# array_rects =[ [[i,j,r,s], [i,j,r,s],] [[i,j,r,s],] ]
+	array_rects = get_rects_in_matrix(matrix_vertex, matrix_bool)
 	
-	
-	v_size = len(matrix_bool)
-	h_size = len(matrix_bool[0])
-	
-
-	for i in range(v_size):
-				
-		for j in range(h_size):
-			
-			#当前矩形
-			v = matrix_bool[i][j]
-
-			rect = matrix_vertex[i][j]
-			
-			pt1 = rect[0]
-			pt2 = rect[1]
-			
-			
-			'''
-			if v == 0 : 
-				cv2.rectangle(canvas, (pt1[0]+2, pt1[1]+2), (pt2[0]-2, pt2[1]-2), (50, 50, 50), -1)
-			else:
-				cv2.rectangle(canvas, (pt1[0]+2, pt1[1]+2), (pt2[0]-2, pt2[1]-2), (50, 150, 1000), -1)
+	#寻找每个子矩形的扩张最大矩形面积
+	max_size = 0
+	max_size_rect = None
+	for rects in array_rects:
+		for rect in rects:
+			size = get_rect_size_of_matrix(matrix_vertex, rect)
+			if size > max_size:
+				max_size = size
+				max_size_rect = rect
 			#endif
-			
-			cv2.imshow('get_inscribed_rect', canvas)
-			cv2.waitKey(0)
-			'''
-			
-			#跳过空值
-			if v == 0:
-				continue
-			#endif
-			
-			#找最大宽度和高度
-			max_w = 1
-			max_h = 1
-			
-			#横向查找,最远的矩形跨度w赋值为max_w，如果这个w<max_w，则更新max_w
-			
-			w = 1
-			for m in range(j+1, h_size):
-				if matrix_bool[i][m] == 1:
-					w = w + 1
-				else:
-					break
-				#endif
-			#endfor
-			if w > max_w:
-				max_w = w
-			#endif
-			print("row i(%d) , col j(%d) max_w=%d" % (i, j, max_w))
-			
-			'''
-			#纵向每行确认相同宽度，遇到0则终止查找
-			for n in range(i, max_w):
-				if matrix_bool[n][j] == 1:
-					h = h + 1
-				else:
-					break
-				#endif
-			#endfor
-			'''
-			
-			max_rect = [0,0,0,0,0]
-			array_rect.append(max_rect)
-			
-			
-			
 		#endfor
-		
-	#endfor
 	
+	#endfor
 
+	print(max_size)
+	print(max_size_rect)
+	[i,j,r,s] = max_size_rect
+	
+	[pt1, pt2] = matrix_vertex[i][j]
+	[pt3, pt4] = matrix_vertex[r][s]
+	cv2.rectangle(canvas, (pt1[0]+1, pt1[1]+1), (pt4[0]-1, pt4[1]-1), (200, 200, 200), -1)
+	cv2.imshow('get_inscribed_rect', canvas)
+	cv2.waitKey(0)
 
 	cv2.destroyAllWindows()
 	
-	return rect
+	return inscribed_rect
 #enddef
 
 
