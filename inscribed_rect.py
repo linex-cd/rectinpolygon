@@ -609,19 +609,28 @@ def get_inscribed_rect(points):
 	
 	[pt1, pt2] = matrix_vertex[i][j]
 	[pt3, pt4] = matrix_vertex[r][s]
-	cv2.rectangle(canvas, (pt1[0]+1, pt1[1]+1), (pt4[0]-1, pt4[1]-1), (200, 200, 200), -1)
+	cv2.rectangle(canvas, (pt1[0]+1, pt1[1]+1), (pt4[0]-1, pt4[1]-1), (200, 200, 200), 2)
+	
+	inscribed_rect = [matrix_vertex[i][j], matrix_vertex[r][s], max_size]
+	
 	cv2.imshow('get_inscribed_rect', canvas)
-	cv2.waitKey(0)
-
+	while(True):
+		c = cv2.waitKey(0)
+		if c == 27:
+		# ESC对应的ASCII码是27
+			break
+		
 	cv2.destroyAllWindows()
 	
 	return inscribed_rect
 #enddef
 
 
-points = [(100,300), (200,200), (500, 350), (450, 600), (350, 700), (200, 600), (150, 500)]
+points = [(100,300), (200,200), (500, 350), (450, 600), (350, 700), (200, 600), (150, 500)] #凸
+points = [(100,300), (200,200), (500, 350), (400, 450), (450, 600), (350, 700), (200, 600), (150, 500)] #凹
+points = [(100,300), (200,200), (500, 350), (400, 350), (450, 600), (350, 700), (200, 600), (150, 500)] #求交测试有bug
 
 print(points)
 r = get_inscribed_rect(points)
-
+print(r)
 
