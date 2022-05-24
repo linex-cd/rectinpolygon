@@ -136,17 +136,37 @@ def pt_is_in_poly(p, poly):
 #判断子矩形是否在多边形之内
 def is_subarea_in_polygon(polygon, subarea):
 	
+	pts = []
+	
 	pt1 = subarea[0]
 	pt2 = subarea[1]
+
 	
 	pt3 = [pt2[0], pt1[1]]
 	pt4 = [pt1[0], pt2[1]]
 	
-	if pt_is_in_poly(pt1, polygon) and pt_is_in_poly(pt2, polygon) and pt_is_in_poly(pt3, polygon) and pt_is_in_poly(pt4, polygon):
-		return True
-	#endif
+	#因为对角线上的点可能都在矩形内，所以要判断边中点是否也都在多边形内
+	pt5 = [int((pt1[0]+pt2[0])/2), pt1[1]]
+	pt6 = [int((pt1[0]+pt2[0])/2), pt2[1]]
+	
+	pt7 = [pt1[0], int((pt1[1]+pt2[1])/2)]
+	pt8 = [pt2[0], int((pt1[1]+pt2[1])/2)]
+	
+	pts.append(pt1)
+	pts.append(pt2)
+	pts.append(pt3)
+	pts.append(pt4)
+	pts.append(pt5)
+	pts.append(pt6)
+	pts.append(pt7)
+	pts.append(pt8)
+	
+	for pt in pts:
+		if pt_is_in_poly(pt, polygon) is False:
+			return False
+		#endif
 
-	return False
+	return True
 	
 #enddef
 
@@ -211,8 +231,15 @@ def get_rect_of_point(i, j, max_w, max_h, matrix_bool):
 					r = p-1
 					s = j+z-1
 					
-					#判断上一行是否存在矩形
-					if matrix_bool[r][s] == 1:
+					#判断上面所有行是否存在矩形
+					flag = 1
+					for u in range(i, r+1):
+						if matrix_bool[u][s] == 0:
+							flag = 0
+							break
+						#endif
+					#endfor
+					if flag == 1:
 						r = [i,j,r,s]
 						if r not in r_array:
 							r_array.append(r)
@@ -616,8 +643,7 @@ def get_inscribed_rect(points):
 	cv2.imshow('get_inscribed_rect', canvas)
 	while(True):
 		c = cv2.waitKey(0)
-		if c == 27:
-		# ESC对应的ASCII码是27
+		if c == 27:#ESC
 			break
 		
 	cv2.destroyAllWindows()
@@ -628,7 +654,9 @@ def get_inscribed_rect(points):
 
 points = [(100,300), (200,200), (500, 350), (450, 600), (350, 700), (200, 600), (150, 500)] #凸
 points = [(100,300), (200,200), (500, 350), (400, 450), (450, 600), (350, 700), (200, 600), (150, 500)] #凹
-points = [(100,300), (200,200), (500, 350), (400, 350), (450, 600), (350, 700), (200, 600), (150, 500)] #求交测试有bug
+points = [(100,300), (200,200), (500, 350), (400, 350), (450, 600), (350, 700), (200, 600), (150, 500)] #水平边
+points = [(100,300), (200,200), (500, 350), (400, 350), (400, 600), (450, 600), (350, 700), (200, 600), (150, 500)] #垂直边
+points = [(100,300), (200,200), (500, 350), (400, 370), (430, 600), (450, 600), (350, 700), (200, 600), (150, 500)] #
 
 print(points)
 r = get_inscribed_rect(points)
