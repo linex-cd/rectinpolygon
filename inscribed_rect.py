@@ -3,7 +3,6 @@ import cv2
 import numpy as np
 
 
-
 #初始化画布
 def init_canvas(width, height, color=(255, 255, 255)):
 	canvas = np.ones((height, width, 3), dtype="uint8")
@@ -170,39 +169,7 @@ def is_subarea_in_polygon(polygon, subarea):
 	
 #enddef
 
-#检索每个点的所有矩形-测试
-def get_rect_of_point_test():
-	#            *
-	#0  1  2  3  4  5  6  7 j/i
-	matrix_bool=[
-	[0, 0, 0, 0, 0, 0, 0, 0], #0
-	[0, 0, 1, 0, 0, 0, 0, 0], #1
-	[0, 0, 1, 1, 0, 0, 0, 0], #2
-	[0, 1, 1, 1, 1, 0, 0, 0], #3
-	[0, 1, 1, 1, 1, 1, 0, 0], #4
-	[0, 0, 1, 1, 1, 1, 1, 0], #5*
-	[0, 0, 0, 1, 1, 1, 0, 0], #6
-	[0, 0, 0, 0, 0, 0, 0, 0]] #7
-				
-	#5 4 5 6			
-	#5 4 6 5			
-	#5 4 6 4			
-				
-	#确认1矩形
-	'''
-	1, 1, 1,
-	1, 1, 0,
-	'''
 
-	i=5
-	j=4
-	max_w=3
-	max_h=2
-	
-	r_array = get_rect_of_point(i, j, max_w, max_h, matrix_bool)
-	
-	print(r_array)
-#enddef
 
 #检索每个点的所有矩形
 def get_rect_of_point(i, j, max_w, max_h, matrix_bool):
@@ -297,16 +264,6 @@ def get_rects_in_matrix(matrix_vertex, matrix_bool):
 			pt2 = rect[1]
 			
 			
-			'''
-			if v == 0 : 
-				cv2.rectangle(canvas, (pt1[0]+2, pt1[1]+2), (pt2[0]-2, pt2[1]-2), (50, 50, 50), -1)
-			else:
-				cv2.rectangle(canvas, (pt1[0]+2, pt1[1]+2), (pt2[0]-2, pt2[1]-2), (50, 150, 1000), -1)
-			#endif
-			
-			cv2.imshow('get_inscribed_rect', canvas)
-			cv2.waitKey(0)
-			'''
 			
 			#跳过空值
 			if v == 0:
@@ -374,6 +331,225 @@ def get_rects_in_matrix(matrix_vertex, matrix_bool):
 #endif
 			
 def get_inscribed_rect(points):
+
+	inscribed_rect = None
+	
+	## 获取边界
+	bound = get_bound(points)
+	
+	
+	## 求多边形边
+	edges = []
+	count = len(points)
+	for index in range(count):
+		
+		pt1 = points[index]
+		
+		if index == count -1:
+			pt2 = points[0]
+		else:
+			pt2 = points[index+1]
+		#endif
+		
+		edges.append([pt1, pt2])
+
+		
+	#endfor
+
+	
+	## *遍历角度组合
+	
+	
+	## *遍历矩形组合
+	
+	## 计算所有网格线
+	lines = []
+	lines_h = []
+	lines_v = []
+	for index in range(count):
+		
+		pt = points[index]
+		pt = list(pt)
+		
+		pt1 = (pt[0], 0)
+		pt2 = (pt[0], bound[3] + bound[1])
+		lines_v.append([pt1, pt2])
+		lines.append([pt1, pt2])
+		
+		
+		pt1 = (0, pt[1])
+		pt2 = (bound[2] + bound[0], pt[1])
+		lines_h.append([pt1, pt2])
+		lines.append([pt1, pt2])
+		
+		
+	#endfor
+
+	
+	## 网格线和边求交
+	vertexs = []
+
+	for edge in edges:
+		for line in lines:
+
+			intersection = get_line_intersection(edge, line)
+			if intersection is not None:
+			
+				v = list(intersection)
+				v = (int(v[0]), int(v[1]))
+
+				vertexs.append(v)
+				
+				
+			#endif
+			
+			
+		#endfor
+	
+	#endfor
+
+	
+	## 计算顶点网格
+	for index in range(len(vertexs)):
+		
+		pt = vertexs[index]
+		
+		#忽略原始顶点
+		if pt in points:
+			continue
+		#endif
+		
+		pt = list(pt)
+		
+		pt1 = (pt[0], 0)
+		pt2 = (pt[0], bound[3] + bound[1])
+		lines_v.append([pt1, pt2])
+		lines.append([pt1, pt2])
+
+		pt1 = (0, pt[1])
+		pt2 = (bound[2] + bound[0], pt[1])
+		lines_h.append([pt1, pt2])
+		lines.append([pt1, pt2])
+		
+		
+	#endfor
+
+	
+	## 网格去重
+	tmp_lines_h = []
+	for line_h in lines_h:
+		if line_h not in tmp_lines_h:
+			tmp_lines_h.append(line_h)
+		#endif
+	#endfor
+	lines_h = tmp_lines_h
+	
+	tmp_lines_v = []
+	for line_v in lines_v:
+		if line_v not in tmp_lines_v:
+			tmp_lines_v.append(line_v)
+		#endif
+	#endfor
+	lines_v = tmp_lines_v
+	
+	## 网格排序
+	lines_h = sorted(lines_h, key=lambda x: x[0][1])
+	lines_v = sorted(lines_v, key=lambda x: x[0][0])
+	
+	
+	## 所有网格求交得到子矩形集合，并判断子矩形是否在多边形之内，生成判断集合矩阵
+	matrix_bool = [] #是否在多边形内
+	matrix_vertex = [] #矩形的顶点
+	
+	
+	count_lines_h = len(lines_h)
+	count_lines_v = len(lines_v)
+	
+	#扫描行,忽略边框
+	for i in range(1, count_lines_h):
+		line_h = lines_h[i]
+
+		y1 = lines_h[i-1][1][1]
+		y2 = lines_h[i][1][1]
+		
+		matrix_vertex.append([])
+		matrix_bool.append([])
+		
+		#扫描列,忽略边框
+		for j in range(1, count_lines_v):
+			line_v = lines_v[j]
+
+			x1 = lines_v[j-1][0][0]
+			x2 = lines_v[j][0][0]
+			
+			
+			#左上角位置
+			pt1 = (x1, y1)
+
+			#右下角位置
+			pt2 = (x2, y2)
+
+			
+			#保存子矩形
+			subarea = [pt1, pt2]
+			matrix_vertex[i-1].append(subarea)
+
+			## 判断子矩形是否在多边形之内，生成判断集合矩阵
+			
+			check = is_subarea_in_polygon(polygon = points, subarea = subarea)
+			if check:
+				matrix_bool[i-1].append(1)
+				
+			else:
+				matrix_bool[i-1].append(0)
+				
+			#endif
+
+		#endfor
+		
+
+	#endfor
+	
+	## 扫描连通图
+	print('matrix_bool:')
+	for m in matrix_bool:
+		print(m)
+	
+	#endfor
+	
+	#求矩形数组
+	#矩形数组[左上角矩形左上角顶点xy, 右下角矩形右下角顶点, 面积]
+	#矩形为左上角的最大矩形
+	# array_rects =[ [[i,j,r,s], [i,j,r,s],] [[i,j,r,s],] ]
+	array_rects = get_rects_in_matrix(matrix_vertex, matrix_bool)
+	
+	#寻找每个子矩形的扩张最大矩形面积
+	max_size = 0
+	max_size_rect = None
+	for rects in array_rects:
+		for rect in rects:
+			size = get_rect_size_of_matrix(matrix_vertex, rect)
+			if size > max_size:
+				max_size = size
+				max_size_rect = rect
+			#endif
+		#endfor
+	
+	#endfor
+
+	[i,j,r,s] = max_size_rect
+	
+	[pt1, pt2] = matrix_vertex[i][j]
+	[pt3, pt4] = matrix_vertex[r][s]
+
+	inscribed_rect = [matrix_vertex[i][j], matrix_vertex[r][s], max_size]
+	
+
+	return inscribed_rect
+#enddef
+
+			
+def get_inscribed_rect_test(points):
 
 	inscribed_rect = None
 	
@@ -603,7 +779,7 @@ def get_inscribed_rect(points):
 	#endfor
 	
 	## 扫描连通图
-	print('matrix_bool')
+	print('matrix_bool:')
 	for m in matrix_bool:
 		print(m)
 	
@@ -651,14 +827,17 @@ def get_inscribed_rect(points):
 	return inscribed_rect
 #enddef
 
+if __name__ == "__main__":
 
-points = [(100,300), (200,200), (500, 350), (450, 600), (350, 700), (200, 600), (150, 500)] #凸
-points = [(100,300), (200,200), (500, 350), (400, 450), (450, 600), (350, 700), (200, 600), (150, 500)] #凹
-points = [(100,300), (200,200), (500, 350), (400, 350), (450, 600), (350, 700), (200, 600), (150, 500)] #水平边
-points = [(100,300), (200,200), (500, 350), (400, 350), (400, 600), (450, 600), (350, 700), (200, 600), (150, 500)] #垂直边
-points = [(100,300), (200,200), (500, 350), (400, 370), (430, 600), (450, 600), (350, 700), (200, 600), (150, 500)] #
+	pass
 
-print(points)
-r = get_inscribed_rect(points)
-print(r)
+	points = [(100,300), (200,200), (500, 350), (450, 600), (350, 700), (200, 600), (150, 500)] #凸
+	points = [(100,300), (200,200), (500, 350), (400, 450), (450, 600), (350, 700), (200, 600), (150, 500)] #凹
+	points = [(100,300), (200,200), (500, 350), (400, 350), (450, 600), (350, 700), (200, 600), (150, 500)] #水平边
+	points = [(100,300), (200,200), (500, 350), (400, 350), (400, 600), (450, 600), (350, 700), (200, 600), (150, 500)] #垂直边
+	points = [(100,300), (200,200), (500, 350), (400, 370), (430, 600), (450, 600), (350, 700), (200, 600), (150, 500)] #
+
+	print(points)
+	r = get_inscribed_rect_test(points)
+	print(r)
 
