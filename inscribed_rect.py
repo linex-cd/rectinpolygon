@@ -120,7 +120,7 @@ def pt_is_in_poly(p, poly):
 			if x == px:  # 点在边上
 				ret = True
 				break
-			elif x > px:  #点在左侧，做一次发展
+			elif x > px:  #点在左侧，做一次翻转
 				ret = not ret
 			#endif
 		#endif
